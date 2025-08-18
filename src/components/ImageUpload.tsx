@@ -16,14 +16,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect, isProce
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
-      // Create preview
       const reader = new FileReader();
       reader.onload = () => {
         setPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
       
-      // Call parent handler
       onImageSelect(file);
     }
   }, [onImageSelect]);
@@ -41,14 +39,11 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect, isProce
 
   if (isProcessing) {
     return (
-      <Card className="p-8 border-2 border-dashed border-primary/20 bg-gradient-subtle">
+      <Card className="p-8 border-2 border-dashed border-primary/20">
         <div className="flex flex-col items-center justify-center space-y-4">
           <Loader2 className="h-12 w-12 text-primary animate-spin" />
-          <p className="text-lg font-medium text-muted-foreground">
+          <p className="text-lg font-medium">
             Processando sua imagem...
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Criando uma versão mais apetitosa
           </p>
         </div>
       </Card>
@@ -56,7 +51,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect, isProce
   }
 
   return (
-    <Card className="p-8 border-2 border-dashed border-primary/20 hover:border-primary/40 transition-colors bg-gradient-subtle">
+    <Card className="p-8 border-2 border-dashed border-primary/20 hover:border-primary/40 transition-colors">
       <div
         {...getRootProps()}
         className={`cursor-pointer transition-all duration-300 ${
@@ -71,15 +66,15 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect, isProce
               <img
                 src={preview}
                 alt="Preview"
-                className="w-full h-auto rounded-lg shadow-warm"
+                className="w-full h-auto rounded-lg"
               />
             </div>
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground">
-                Imagem carregada! Clique no botão para melhorar.
+                Imagem carregada! Clique em "Melhorar Foto" para continuar.
               </p>
               <Button
-                variant="food"
+                variant="outline"
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -100,15 +95,14 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect, isProce
               )}
             </div>
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">
-                {isDragActive ? 'Solte sua imagem aqui' : 'Envie uma foto da sua comida'}
+              <h3 className="text-lg font-semibold">
+                {isDragActive ? 'Solte sua imagem aqui' : 'Escolha uma foto de comida'}
               </h3>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Arraste e solte uma imagem ou clique para selecionar. 
-                Formatos suportados: JPG, PNG, WEBP
+              <p className="text-sm text-muted-foreground">
+                Arraste e solte ou clique para selecionar
               </p>
             </div>
-            <Button variant="hero" size="lg">
+            <Button size="lg">
               <Upload className="h-4 w-4 mr-2" />
               Selecionar Imagem
             </Button>

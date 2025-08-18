@@ -1,6 +1,5 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Download, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -21,16 +20,15 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
       try {
         await navigator.share({
           title: 'Minha foto melhorada',
-          text: 'Olha como ficou incrível minha foto de comida!',
+          text: 'Olha como ficou minha foto de comida!',
           url: improvedImage
         });
       } catch (error) {
         toast.error('Erro ao compartilhar');
       }
     } else {
-      // Fallback: copy to clipboard
       navigator.clipboard.writeText(improvedImage);
-      toast.success('Link copiado para a área de transferência!');
+      toast.success('Link copiado!');
     }
   };
 
@@ -48,19 +46,19 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-foreground mb-2">
-          Resultado Incrível! 🍽️
+        <h2 className="text-2xl font-bold mb-2">
+          Resultado! ✨
         </h2>
         <p className="text-muted-foreground">
-          Veja a diferença entre o antes e depois
+          Veja o antes e depois
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Original Image */}
-        <Card className="p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <Badge variant="outline">Original</Badge>
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Original */}
+        <Card className="p-4">
+          <div className="text-center mb-2">
+            <span className="text-sm text-muted-foreground">Antes</span>
           </div>
           <div className="aspect-square overflow-hidden rounded-lg">
             <img
@@ -71,12 +69,12 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
           </div>
         </Card>
 
-        {/* Improved Image */}
-        <Card className="p-4 space-y-3 border-primary/20 bg-gradient-subtle">
-          <div className="flex items-center justify-between">
-            <Badge className="bg-gradient-warm text-white">Melhorada ✨</Badge>
+        {/* Melhorada */}
+        <Card className="p-4 border-primary/20">
+          <div className="text-center mb-2">
+            <span className="text-sm font-medium text-primary">Depois</span>
           </div>
-          <div className="aspect-square overflow-hidden rounded-lg shadow-warm">
+          <div className="aspect-square overflow-hidden rounded-lg">
             <img
               src={improvedImage}
               alt="Imagem melhorada"
@@ -86,20 +84,19 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
         </Card>
       </div>
 
-      {/* Action Buttons */}
+      {/* Botões */}
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <Button
-          variant="hero"
           size="lg"
           onClick={handleDownload}
           className="flex-1 sm:flex-none"
         >
           <Download className="h-4 w-4 mr-2" />
-          Baixar Imagem
+          Baixar
         </Button>
         
         <Button
-          variant="food"
+          variant="outline"
           size="lg"
           onClick={handleShare}
           className="flex-1 sm:flex-none"
