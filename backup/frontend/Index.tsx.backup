@@ -59,14 +59,7 @@ const Index = () => {
       
     } catch (error) {
       console.error('Error processing image:', error);
-      
-      // Fallback: usa a imagem original se houve erro
-      if (originalImageUrl) {
-        setImprovedImageUrl(originalImageUrl);
-        toast.warning('Houve um problema com a IA. Exibindo a imagem original.');
-      } else {
-        toast.error(error.message || 'Erro ao processar imagem');
-      }
+      toast.error(error.message || 'Erro ao processar imagem');
     } finally {
       setIsProcessing(false);
     }
