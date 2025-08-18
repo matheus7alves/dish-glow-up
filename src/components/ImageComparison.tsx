@@ -54,13 +54,13 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Original */}
         <Card className="p-4">
-          <div className="text-center mb-2">
-            <span className="text-sm text-muted-foreground">Antes</span>
+          <div className="text-center mb-3">
+            <span className="text-sm font-medium text-muted-foreground">ANTES</span>
           </div>
-          <div className="aspect-square overflow-hidden rounded-lg">
+          <div className="aspect-square overflow-hidden rounded-lg bg-muted">
             <img
               src={originalImage}
               alt="Imagem original"
@@ -70,11 +70,11 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
         </Card>
 
         {/* Melhorada */}
-        <Card className="p-4 border-primary/20">
-          <div className="text-center mb-2">
-            <span className="text-sm font-medium text-primary">Depois</span>
+        <Card className="p-4 border-primary/30 bg-primary/5">
+          <div className="text-center mb-3">
+            <span className="text-sm font-bold text-primary">DEPOIS ✨</span>
           </div>
-          <div className="aspect-square overflow-hidden rounded-lg">
+          <div className="aspect-square overflow-hidden rounded-lg bg-muted">
             <img
               src={improvedImage}
               alt="Imagem melhorada"
