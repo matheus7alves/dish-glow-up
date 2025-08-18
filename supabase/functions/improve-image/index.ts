@@ -41,24 +41,29 @@ serve(async (req) => {
 
     console.log('Image downloaded successfully');
 
-    // Convert blob to base64
-    const arrayBuffer = await imageData.arrayBuffer();
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    // Prepare multipart/form-data for OpenAI
+    const form = new FormData();
+    
+    // Add image as blob with filename to help server detect type
+    form.append("image", imageData, "input.png");
+    
+    // Add prompt (fixed)
+    const FIXED_PROMPT = `Pegue a imagem carregada e gere uma nova versão mais apetitosa e profissional, ideal para cardápios digitais de restaurantes (como iFood). Mantenha exatamente os mesmos ingredientes, produtos e disposição do prato, sem adicionar ou remover elementos. Melhore apenas a estética: cores mais vivas, iluminação mais natural e atraente, contraste equilibrado, textura realçada, aparência fresca e suculenta, com estilo de fotografia gastronômica profissional que desperte água na boca. O resultado deve parecer uma foto real, não uma ilustração.`;
+    
+    form.append("prompt", FIXED_PROMPT);
+    form.append("model", "gpt-image-1");
+    form.append("size", "1024x1024");
+    form.append("response_format", "b64_json");
+    form.append("n", "1");
 
-    // Call OpenAI API for image improvement
+    // Call OpenAI API for image improvement using multipart/form-data
     const openAIResponse = await fetch('https://api.openai.com/v1/images/edits', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
+        // DO NOT set Content-Type - let FormData set it with boundary
       },
-      body: JSON.stringify({
-        model: 'dall-e-2', // Note: gpt-image-1 is not available for edits endpoint
-        image: base64Image,
-        prompt: `Pegue a imagem carregada e gere uma nova versão mais apetitosa e profissional, ideal para cardápios digitais de restaurantes (como iFood). Mantenha exatamente os mesmos ingredientes, produtos e disposição do prato, sem adicionar ou remover elementos. Melhore apenas a estética: cores mais vivas, iluminação mais natural e atraente, contraste equilibrado, textura realçada, aparência fresca e suculenta, com estilo de fotografia gastronômica profissional que desperte água na boca. O resultado deve parecer uma foto real, não uma ilustração.`,
-        size: "1024x1024",
-        response_format: "b64_json"
-      }),
+      body: form,
     });
 
     if (!openAIResponse.ok) {
