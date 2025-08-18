@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ChefHat, Sparkles, Camera, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import heroImage from '@/assets/hero-image.jpg';
 
 const Index = () => {
@@ -26,11 +27,40 @@ const Index = () => {
       return;
     }
 
-    // Show connection requirement message
-    toast.error(
-      'Para processar imagens, você precisa conectar ao Supabase primeiro.',
-      { duration: 6000 }
-    );
+    setIsProcessing(true);
+    
+    try {
+      // Upload original image to Supabase
+      const fileName = `uploads/${Date.now()}_${selectedFile.name}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(fileName, selectedFile);
+
+      if (uploadError) {
+        throw new Error('Erro ao fazer upload da imagem');
+      }
+
+      // Call the improve-image edge function
+      const { data: improveData, error: improveError } = await supabase.functions
+        .invoke('improve-image', {
+          body: { imagePath: fileName }
+        });
+
+      if (improveError || !improveData?.success) {
+        throw new Error(improveData?.error || 'Erro ao processar imagem');
+      }
+
+      // Set the improved image URL
+      setImprovedImageUrl(improveData.improvedImageUrl);
+      toast.success('Imagem melhorada com sucesso!');
+      
+    } catch (error) {
+      console.error('Error processing image:', error);
+      toast.error(error.message || 'Erro ao processar imagem');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const resetToUpload = () => {
