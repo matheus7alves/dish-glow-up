@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ChefHat, Sparkles, Camera, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+
 import heroImage from '@/assets/hero-image.jpg';
 
 const Index = () => {
@@ -30,29 +30,31 @@ const Index = () => {
     setIsProcessing(true);
     
     try {
-      // Upload original image to Supabase
-      const fileName = `uploads/${Date.now()}_${selectedFile.name}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('images')
-        .upload(fileName, selectedFile);
+      // Envia o arquivo diretamente para a Edge Function via multipart/form-data
+      const FUNCTION_URL = 'https://apdradsukadmakdybffj.supabase.co/functions/v1/improve-image';
 
-      if (uploadError) {
-        throw new Error('Erro ao fazer upload da imagem');
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+
+      const response = await fetch(FUNCTION_URL, {
+        method: 'POST',
+        // Não defina manualmente o Content-Type para permitir o boundary correto
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.error || 'Falha ao chamar a Edge Function');
       }
 
-      // Call the improve-image edge function
-      const { data: improveData, error: improveError } = await supabase.functions
-        .invoke('improve-image', {
-          body: { imagePath: fileName }
-        });
-
-      if (improveError || !improveData?.success) {
-        throw new Error(improveData?.error || 'Erro ao processar imagem');
+      const result = await response.json();
+      const b64 = result?.data?.[0]?.b64_json as string | undefined;
+      if (!b64) {
+        throw new Error('Resposta inválida da IA: imagem não encontrada');
       }
 
-      // Set the improved image URL
-      setImprovedImageUrl(improveData.improvedImageUrl);
+      const dataUrl = `data:image/png;base64,${b64}`;
+      setImprovedImageUrl(dataUrl);
       toast.success('Imagem melhorada com sucesso!');
       
     } catch (error) {

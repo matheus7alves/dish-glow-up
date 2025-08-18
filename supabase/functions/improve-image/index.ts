@@ -1,6 +1,12 @@
 // supabase/functions/improve-image/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// CORS headers for browser requests
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 // Prompt fixo
 const FIXED_PROMPT = `
 Pegue a imagem carregada e gere uma nova versão mais apetitosa e profissional, ideal para cardápios digitais de restaurantes (como iFood).
@@ -10,12 +16,17 @@ O resultado deve parecer uma foto real, não uma ilustração.
 `;
 
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   try {
     const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openAIApiKey) {
       return new Response(
         JSON.stringify({ error: "Missing OPENAI_API_KEY in environment" }),
-        { status: 500 }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -24,16 +35,16 @@ serve(async (req) => {
     if (!contentType.includes("multipart/form-data")) {
       return new Response(
         JSON.stringify({ error: "Content-Type must be multipart/form-data" }),
-        { status: 400 }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const formData = await req.formData();
-    const imageFile = formData.get("image") as File;
+    const imageFile = formData.get("image") as File | null;
     if (!imageFile) {
       return new Response(
         JSON.stringify({ error: "Image file is required" }),
-        { status: 400 }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -55,29 +66,30 @@ serve(async (req) => {
     });
 
     if (!openAIResponse.ok) {
-      const err = await openAIResponse.json();
-      console.error("OpenAI API error:", err);
+      let details: unknown = null;
+      try {
+        details = await openAIResponse.json();
+      } catch (_) {
+        details = await openAIResponse.text();
+      }
+      console.error("OpenAI API error:", details);
       return new Response(
-        JSON.stringify({ error: "OpenAI API error", details: err }),
-        { status: 500 }
+        JSON.stringify({ error: "OpenAI API error", details }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const result = await openAIResponse.json();
 
-    // Pega a URL da imagem retornada
-    const imageUrl = result.data?.[0]?.url || null;
-
-    return new Response(
-      JSON.stringify({ imageUrl }),
-      { headers: { "Content-Type": "application/json" } }
-    );
-
+    // Retorna o JSON completo da OpenAI (inclui data[0].b64_json)
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (err) {
     console.error("Error in improve-image function:", err);
     return new Response(
-      JSON.stringify({ error: "Internal Server Error", details: err.message }),
-      { status: 500 }
+      JSON.stringify({ error: "Internal Server Error", details: (err as Error).message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
