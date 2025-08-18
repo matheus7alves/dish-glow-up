@@ -1,138 +1,83 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
+// supabase/functions/improve-image/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// Prompt fixo
+const FIXED_PROMPT = `
+Pegue a imagem carregada e gere uma nova versão mais apetitosa e profissional, ideal para cardápios digitais de restaurantes (como iFood).
+Mantenha exatamente os mesmos ingredientes, produtos e disposição do prato, sem adicionar ou remover elementos.
+Melhore apenas a estética: cores mais vivas, iluminação mais natural e atraente, contraste equilibrado, textura realçada, aparência fresca e suculenta, com estilo de fotografia gastronômica profissional que desperte água na boca.
+O resultado deve parecer uma foto real, não uma ilustração.
+`;
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
   try {
-    const { imagePath } = await req.json();
-    
-    if (!imagePath) {
-      throw new Error('imagePath is required');
+    const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!openAIApiKey) {
+      return new Response(
+        JSON.stringify({ error: "Missing OPENAI_API_KEY in environment" }),
+        { status: 500 }
+      );
     }
 
-    console.log('Processing image:', imagePath);
-
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Download the original image from Supabase
-    const { data: imageData, error: downloadError } = await supabase.storage
-      .from('images')
-      .download(imagePath);
-
-    if (downloadError || !imageData) {
-      console.error('Error downloading image:', downloadError);
-      throw new Error('Failed to download image from storage');
+    // Recebe o form enviado pelo cliente
+    const contentType = req.headers.get("content-type") || "";
+    if (!contentType.includes("multipart/form-data")) {
+      return new Response(
+        JSON.stringify({ error: "Content-Type must be multipart/form-data" }),
+        { status: 400 }
+      );
     }
 
-    console.log('Image downloaded successfully');
+    const formData = await req.formData();
+    const imageFile = formData.get("image") as File;
+    if (!imageFile) {
+      return new Response(
+        JSON.stringify({ error: "Image file is required" }),
+        { status: 400 }
+      );
+    }
 
-    // Prepare multipart/form-data for OpenAI
+    // Monta o form para a API da OpenAI
     const form = new FormData();
-    
-    // Add image as blob with filename to help server detect type
-    form.append("image", imageData, "input.png");
-    
-    // Add prompt (fixed)
-    const FIXED_PROMPT = `Pegue a imagem carregada e gere uma nova versão mais apetitosa e profissional, ideal para cardápios digitais de restaurantes (como iFood). Mantenha exatamente os mesmos ingredientes, produtos e disposição do prato, sem adicionar ou remover elementos. Melhore apenas a estética: cores mais vivas, iluminação mais natural e atraente, contraste equilibrado, textura realçada, aparência fresca e suculenta, com estilo de fotografia gastronômica profissional que desperte água na boca. O resultado deve parecer uma foto real, não uma ilustração.`;
-    
+    form.append("image", imageFile, "input.png");
     form.append("prompt", FIXED_PROMPT);
     form.append("model", "gpt-image-1");
     form.append("size", "1024x1024");
-    form.append("response_format", "b64_json");
     form.append("n", "1");
 
-    // Call OpenAI API for image improvement using multipart/form-data
-    const openAIResponse = await fetch('https://api.openai.com/v1/images/edits', {
-      method: 'POST',
+    // Faz a chamada à OpenAI
+    const openAIResponse = await fetch("https://api.openai.com/v1/images/edits", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        // DO NOT set Content-Type - let FormData set it with boundary
+        Authorization: `Bearer ${openAIApiKey}`,
       },
       body: form,
     });
 
     if (!openAIResponse.ok) {
-      const errorText = await openAIResponse.text();
-      console.error('OpenAI API error:', errorText);
-      throw new Error(`OpenAI API error: ${openAIResponse.status}`);
+      const err = await openAIResponse.json();
+      console.error("OpenAI API error:", err);
+      return new Response(
+        JSON.stringify({ error: "OpenAI API error", details: err }),
+        { status: 500 }
+      );
     }
 
-    const openAIData = await openAIResponse.json();
-    console.log('OpenAI response received');
+    const result = await openAIResponse.json();
 
-    if (!openAIData.data?.[0]?.b64_json) {
-      throw new Error('No image returned from OpenAI');
-    }
-
-    // Convert base64 back to blob
-    const improvedImageBase64 = openAIData.data[0].b64_json;
-    const improvedImageBytes = Uint8Array.from(atob(improvedImageBase64), c => c.charCodeAt(0));
-    const improvedImageBlob = new Blob([improvedImageBytes], { type: 'image/png' });
-
-    // Generate unique filename for improved image
-    const originalFileName = imagePath.split('/').pop()?.split('.')[0] || 'image';
-    const improvedFileName = `improved/${originalFileName}_improved_${Date.now()}.png`;
-
-    // Upload improved image to Supabase
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('images')
-      .upload(improvedFileName, improvedImageBlob, {
-        contentType: 'image/png',
-        upsert: true
-      });
-
-    if (uploadError) {
-      console.error('Error uploading improved image:', uploadError);
-      throw new Error('Failed to upload improved image');
-    }
-
-    console.log('Improved image uploaded:', improvedFileName);
-
-    // Get public URL for the improved image
-    const { data: publicUrlData } = supabase.storage
-      .from('images')
-      .getPublicUrl(improvedFileName);
-
-    const improvedImageUrl = publicUrlData.publicUrl;
+    // Pega a URL da imagem retornada
+    const imageUrl = result.data?.[0]?.url || null;
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        improvedImageUrl,
-        originalPath: imagePath,
-        improvedPath: improvedFileName
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ imageUrl }),
+      { headers: { "Content-Type": "application/json" } }
     );
 
-  } catch (error) {
-    console.error('Error in improve-image function:', error);
+  } catch (err) {
+    console.error("Error in improve-image function:", err);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ error: "Internal Server Error", details: err.message }),
+      { status: 500 }
     );
   }
 });
