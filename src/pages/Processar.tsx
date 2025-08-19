@@ -2,15 +2,35 @@ import { Layout } from "@/components/layout/Layout";
 import { ImageUpload } from "@/components/ImageUpload";
 import { ImageComparison } from "@/components/ImageComparison";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useUser } from "@/hooks/useUser";
 
 export default function Processar() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [originalImageUrl, setOriginalImageUrl] = useState<string>("");
   const [improvedImageUrl, setImprovedImageUrl] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isTrialMode, setIsTrialMode] = useState(false);
+  const [trialUsed, setTrialUsed] = useState(false);
+  
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useUser();
+
+  useEffect(() => {
+    const trial = searchParams.get("trial") === "1";
+    const trialEligible = sessionStorage.getItem("trialEligible") === "true";
+    
+    if (!user && trial && trialEligible) {
+      setIsTrialMode(true);
+    } else if (!user && trial && !trialEligible) {
+      toast.error("Demonstração não disponível ou já utilizada.");
+      navigate("/");
+    }
+  }, [searchParams, user, navigate]);
 
   const handleImageSelect = (file: File) => {
     setSelectedFile(file);
@@ -21,6 +41,32 @@ export default function Processar() {
 
   const handleProcessImage = async () => {
     if (!selectedFile) return;
+
+    // Se for trial mode, verificar e travar antes de processar
+    if (isTrialMode && !user) {
+      const trialEmail = sessionStorage.getItem("trialEmail");
+      if (!trialEmail) {
+        toast.error("Dados do trial não encontrados.");
+        navigate("/");
+        return;
+      }
+
+      try {
+        const { data: lockData, error: lockError } = await supabase.rpc("lock_trial_job", { 
+          in_email: trialEmail 
+        });
+
+        if (lockError || !lockData?.[0]?.lock_ok) {
+          toast.error("Sua demonstração já foi usada ou está em processamento.");
+          navigate("/planos");
+          return;
+        }
+      } catch (error) {
+        console.error("Error locking trial:", error);
+        toast.error("Erro ao validar demonstração.");
+        return;
+      }
+    }
 
     setIsProcessing(true);
     
@@ -37,6 +83,17 @@ export default function Processar() {
       if (data && data.data && data.data[0] && data.data[0].b64_json) {
         const improvedImageDataUrl = `data:image/png;base64,${data.data[0].b64_json}`;
         setImprovedImageUrl(improvedImageDataUrl);
+        
+        // Se foi trial, marcar como consumido
+        if (isTrialMode && !user) {
+          const trialEmail = sessionStorage.getItem("trialEmail");
+          if (trialEmail) {
+            await supabase.rpc("consume_trial", { in_email: trialEmail });
+            sessionStorage.setItem("trialEligible", "false");
+            setTrialUsed(true);
+          }
+        }
+        
         toast.success('Imagem processada com sucesso!');
       } else {
         throw new Error('Resposta inválida do servidor');
@@ -56,6 +113,12 @@ export default function Processar() {
   };
 
   const resetToUpload = () => {
+    if (isTrialMode && trialUsed) {
+      toast.info("Demonstração concluída! Cadastre-se para melhorar mais fotos.");
+      navigate("/planos");
+      return;
+    }
+    
     setSelectedFile(null);
     setOriginalImageUrl("");
     setImprovedImageUrl("");
@@ -70,10 +133,15 @@ export default function Processar() {
               originalImage={originalImageUrl}
               improvedImage={improvedImageUrl}
             />
-            <div className="text-center mt-6">
+            <div className="text-center mt-6 space-y-3">
               <Button variant="outline" onClick={resetToUpload}>
-                ← Nova Foto
+                {isTrialMode && trialUsed ? "Ver planos" : "← Nova Foto"}
               </Button>
+              {isTrialMode && trialUsed && (
+                <div className="text-sm text-muted-foreground">
+                  Você concluiu sua demonstração gratuita!
+                </div>
+              )}
             </div>
           </>
         ) : (
@@ -89,7 +157,7 @@ export default function Processar() {
 
             <ImageUpload onImageSelect={handleImageSelect} />
 
-            {selectedFile && (
+            {selectedFile && !trialUsed && (
               <Button 
                 onClick={handleProcessImage} 
                 disabled={isProcessing}
@@ -98,6 +166,22 @@ export default function Processar() {
               >
                 {isProcessing ? "Processando..." : "Melhorar Foto"}
               </Button>
+            )}
+            
+            {trialUsed && (
+              <div className="text-center space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Demonstração concluída! Para melhorar mais fotos:
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Button onClick={() => navigate("/planos")}>
+                    Ver planos
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate("/login")}>
+                    Entrar/Cadastrar
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         )}

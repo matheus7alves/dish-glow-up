@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { TrialForm } from "@/components/TrialForm";
 import { Camera, Sparkles, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
@@ -40,18 +41,7 @@ const Index = () => {
                 Nossa inteligência artificial aprimora suas fotos automaticamente, 
                 deixando seus pratos mais apetitosos e profissionais.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/processar">
-                  <Button size="lg" className="w-full sm:w-auto">
-                    🎉 Primeira foto grátis
-                  </Button>
-                </Link>
-                <Link to="/planos">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                    Ver planos
-                  </Button>
-                </Link>
-              </div>
+              <TrialForm />
             </div>
             <div className="relative">
               <img 
@@ -106,11 +96,18 @@ const Index = () => {
             <p className="text-muted-foreground text-lg">
               Junte-se a milhares de usuários que já transformaram suas fotos de comida
             </p>
-            <Link to="/processar">
-              <Button size="lg">
-                🎉 Teste grátis agora
-              </Button>
-            </Link>
+            <div className="flex gap-4 justify-center">
+              <Link to="/planos">
+                <Button size="lg">
+                  Ver planos
+                </Button>
+              </Link>
+              <Link to="/login">
+                <Button variant="outline" size="lg">
+                  Entrar/Cadastrar
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
