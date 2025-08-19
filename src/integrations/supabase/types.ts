@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      email_trials: {
+        Row: {
+          consumed: boolean
+          consumed_at: string | null
+          created_at: string | null
+          email: string
+          ip: string | null
+          locked: boolean
+          name: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          consumed?: boolean
+          consumed_at?: string | null
+          created_at?: string | null
+          email: string
+          ip?: string | null
+          locked?: boolean
+          name?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          consumed?: boolean
+          consumed_at?: string | null
+          created_at?: string | null
+          email?: string
+          ip?: string | null
+          locked?: boolean
+          name?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -43,7 +76,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_trial_by_email: {
+        Args: {
+          in_email: string
+          in_ip?: string
+          in_name: string
+          in_ua?: string
+        }
+        Returns: {
+          already_used: boolean
+          eligible: boolean
+        }[]
+      }
+      consume_trial: {
+        Args: { in_email: string }
+        Returns: {
+          consumed_now: boolean
+        }[]
+      }
+      lock_trial_job: {
+        Args: { in_email: string }
+        Returns: {
+          lock_ok: boolean
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
