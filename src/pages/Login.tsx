@@ -59,32 +59,27 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      // Para primeira foto grátis, só precisamos validar email e enviar link mágico
-      const { error } = await supabase.auth.signInWithOtp({
-        email: data.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/verificar-email`,
-        },
-      });
+      // Validação básica do email já feita pelo zod
+      // Validação adicional de domínio
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(data.email)) {
+        throw new Error('Formato de email inválido');
+      }
 
-      if (error) throw error;
-
-      // Guardar nome no localStorage para recuperar após confirmação
-      localStorage.setItem('pending_name', data.name);
+      // Para primeira foto grátis, salvar dados temporários e permitir acesso direto
+      localStorage.setItem('first_photo_name', data.name);
+      localStorage.setItem('first_photo_email', data.email);
+      localStorage.setItem('first_photo_granted', 'true');
       
-      navigate(`/verificar-email?email=${encodeURIComponent(data.email)}`);
-      toast.success('Enviamos um link de confirmação para seu e-mail para liberar sua primeira foto grátis.');
+      toast.success('Email validado! Agora você pode processar sua primeira foto grátis.');
+      navigate('/processar');
       
     } catch (error: any) {
-      console.error('Erro no cadastro:', error);
+      console.error('Erro na validação:', error);
       
-      let errorMessage = 'Não foi possível enviar o e-mail de cadastro.';
+      let errorMessage = 'Email inválido. Verifique o formato do email.';
       
-      if (error.message?.includes('rate_limit')) {
-        errorMessage = 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
-      } else if (error.message?.includes('invalid_email')) {
-        errorMessage = 'Email inválido. Verifique o formato do email.';
-      } else if (error.message) {
+      if (error.message) {
         errorMessage = error.message;
       }
       
@@ -192,7 +187,7 @@ export default function Login() {
                   className="w-full" 
                   disabled={isLoading || !signupForm.formState.isValid}
                 >
-                  {isLoading ? "Validando..." : "Ganhar primeira foto grátis"}
+                  {isLoading ? "Validando..." : "Acessar primeira foto grátis"}
                 </Button>
               </form>
             </Form>
@@ -204,14 +199,6 @@ export default function Login() {
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   Já tem conta? Entrar
-                </Link>
-              </div>
-              <div>
-                <Link 
-                  to="/verificar-email" 
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Já recebeu o e-mail? Clique aqui para verificar
                 </Link>
               </div>
             </div>
@@ -288,14 +275,6 @@ export default function Login() {
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 Primeira vez aqui? Ganhar foto grátis
-              </Link>
-            </div>
-            <div>
-              <Link 
-                to="/verificar-email" 
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                Já recebeu o e-mail? Clique aqui para verificar
               </Link>
             </div>
           </div>
