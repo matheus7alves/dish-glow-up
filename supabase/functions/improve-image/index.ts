@@ -7,12 +7,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Prompt otimizado para melhor fidelidade e aparência natural
+// Prompt otimizado com correção de defeitos visuais
 const FIXED_PROMPT = `
 Pegue a imagem carregada e gere uma versão aprimorada, mantendo rigorosamente os mesmos ingredientes, cores, formas, tamanhos, posições e proporções do prato original, sem adicionar, remover ou alterar nenhum elemento.
-O foco é apenas na estética: deixar a foto mais atraente, mas com aparência totalmente natural, como se fosse uma fotografia real de comida, sem aspecto artificial ou de ilustração.
-Realce a textura dos ingredientes, deixe as cores vivas mas realistas, melhore a iluminação para parecer luz natural e destaque a suculência e frescor dos alimentos de forma sutil.
-O resultado deve ser praticamente idêntico à foto base, apenas com a qualidade visual aprimorada, com estilo de fotografia gastronômica realista usada em cardápios digitais de restaurantes.
+Corrija discretamente pequenos defeitos visuais como manchas, amassados ou irregularidades que possam prejudicar a aparência da comida, deixando-a mais uniforme e atraente, mas ainda natural.
+O foco é apenas na estética: realçar texturas, corrigir luz e cor, equilibrar contraste e saturação de forma realista, e dar sensação de frescor e suculência sem artificialidade.
+O resultado deve ser praticamente idêntico à foto base, mas com acabamento limpo, aspecto mais apetitoso e estilo de fotografia gastronômica profissional e realista usada em cardápios digitais de restaurantes.
 `;
 
 serve(async (req) => {
