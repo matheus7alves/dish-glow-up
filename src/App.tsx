@@ -7,6 +7,7 @@ import { SupabaseProvider } from "@/providers/SupabaseProvider";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import VerificarEmail from "./pages/VerificarEmail";
+import RedefinirSenha from "./pages/RedefinirSenha";
 import Planos from "./pages/Planos";
 import Conta from "./pages/Conta";
 import Processar from "./pages/Processar";
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/verificar-email" element={<VerificarEmail />} />
+            <Route path="/redefinir-senha" element={<RedefinirSenha />} />
             <Route path="/planos" element={<Planos />} />
             <Route path="/conta" element={<Conta />} />
             <Route path="/processar" element={<Processar />} />

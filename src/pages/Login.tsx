@@ -31,6 +31,9 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
   
   const isSignupMode = searchParams.get("mode") === "signup";
   
@@ -61,29 +64,39 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      // Cadastrar usuário com email e senha
+      // Cadastrar usuário sem magic link - cadastro direto
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/verificar-email`,
-        },
       });
 
       if (error) throw error;
 
       if (authData.user) {
-        // Verificar se o usuário precisa confirmar o email
-        if (!authData.user.email_confirmed_at) {
-          // Guardar nome no sessionStorage para usar após confirmação
-          sessionStorage.setItem('pendingName', data.name);
-          
-          navigate(`/verificar-email?email=${encodeURIComponent(data.email)}`);
-          toast.success('Enviamos um link para o seu e-mail. Clique para confirmar.');
-        } else {
-          // Email já confirmado, usuário pode fazer login diretamente
-          toast.info('Este email já está cadastrado. Use a opção de login.');
-          setTimeout(() => navigate('/login'), 2000);
+        // Fazer login automático após cadastro
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+
+        if (loginError) throw loginError;
+
+        if (loginData.user) {
+          // Criar perfil do usuário
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: loginData.user.id,
+              name: data.name,
+            });
+
+          if (profileError) {
+            console.error('Erro ao criar perfil:', profileError);
+            // Continuar mesmo se houver erro no perfil
+          }
+
+          toast.success('Cadastro realizado com sucesso!');
+          navigate('/processar');
         }
       }
       
@@ -153,6 +166,31 @@ export default function Login() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail) {
+      toast.error('Digite seu email para recuperar a senha.');
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+        redirectTo: `${window.location.origin}/redefinir-senha`,
+      });
+
+      if (error) throw error;
+
+      toast.success('Link de recuperação enviado! Verifique seu email.');
+      setShowForgotPassword(false);
+      setForgotPasswordEmail("");
+    } catch (error: any) {
+      console.error('Erro ao enviar email de recuperação:', error);
+      toast.error('Não foi possível enviar o email. Tente novamente.');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   if (isSignupMode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -160,7 +198,7 @@ export default function Login() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Entre para ganhar 1 foto grátis</CardTitle>
             <CardDescription>
-              Cadastre-se com nome e e-mail. Enviaremos um link de verificação.
+              Cadastre-se com nome, e-mail e senha. Acesso imediato após cadastro.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -234,11 +272,11 @@ export default function Login() {
             
             <div className="mt-4 text-center space-y-2">
               <div>
-                <Link 
+                 <Link 
                   to="/login"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
-                  Já tem conta? Verificar e-mail novamente
+                  Já tem conta? Fazer login
                 </Link>
               </div>
             </div>
@@ -308,16 +346,59 @@ export default function Login() {
             </form>
           </Form>
           
-          <div className="mt-4 text-center space-y-2">
-            <div>
-              <Link 
-                to="/login?mode=signup"
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+          {!showForgotPassword ? (
+            <div className="mt-4 text-center space-y-2">
+              <button
+                onClick={() => setShowForgotPassword(true)}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors underline"
               >
-                Não tem conta? Ganhar foto grátis
-              </Link>
+                Esqueci minha senha
+              </button>
+              <div>
+                <Link 
+                  to="/login?mode=signup"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Não tem conta? Ganhar foto grátis
+                </Link>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="mt-4 space-y-4">
+              <div>
+                <Label htmlFor="forgotEmail" className="text-sm">
+                  Digite seu email para recuperar a senha:
+                </Label>
+                <Input
+                  id="forgotEmail"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleForgotPassword}
+                  disabled={isResetting || !forgotPasswordEmail}
+                  className="flex-1"
+                >
+                  {isResetting ? "Enviando..." : "Enviar link"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setForgotPasswordEmail("");
+                  }}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
