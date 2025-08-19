@@ -74,17 +74,17 @@ serve(async (req) => {
       }
       console.error("OpenAI API error:", details);
       
-      // Fallback: retorna a imagem original em base64 se a IA falhar
-      const imageBuffer = await imageFile.arrayBuffer();
-      const imageBase64 = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
-      
-      return new Response(JSON.stringify({
-        data: [{
-          b64_json: imageBase64
-        }]
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ 
+          error: "Falha na API do OpenAI", 
+          details: details,
+          openai_status: openAIResponse.status 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
 
     const result = await openAIResponse.json();

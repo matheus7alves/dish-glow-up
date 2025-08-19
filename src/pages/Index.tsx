@@ -55,12 +55,13 @@ const Index = () => {
     } catch (error) {
       console.error('Error processing image:', error);
       
-      if (originalImageUrl) {
-        setImprovedImageUrl(originalImageUrl);
-        toast.warning('Problema com a IA. Exibindo imagem original.');
-      } else {
-        toast.error('Erro ao processar imagem');
-      }
+      // Extrai detalhes do erro se disponível
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      
+      toast.error(`Erro ao processar imagem: ${errorMessage}`, {
+        duration: 5000,
+        description: "Tente novamente ou verifique se a imagem está válida"
+      });
     } finally {
       setIsProcessing(false);
     }
