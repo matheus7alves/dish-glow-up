@@ -6,23 +6,27 @@ import { Layout } from "@/components/layout/Layout";
 export default function Planos() {
   const plans = [
     {
-      name: "Rápido e Fácil",
-      price: "R$ 9,90",
+      name: "⚡ Rápido e Fácil",
+      price: "R$ 19,90",
+      period: "(créditos avulsos)",
       credits: "10 fotos",
       description: "Quem precisa de poucas fotos rápidas e sem compromisso mensal",
       features: [
         "10 melhorias de fotos",
+        "Uso único, sem renovação",
         "Qualidade HD",
         "Suporte por email",
       ],
     },
     {
-      name: "Profissional",
-      price: "R$ 19,90",
-      credits: "25 fotos",
-      description: "",
+      name: "📋 Mensal Básico",
+      price: "R$ 29,90",
+      period: "/mês",
+      credits: "20 fotos mensais",
+      description: "Restaurantes com cardápio pequeno ou médio, que fazem ajustes ocasionais",
       features: [
-        "25 melhorias de fotos",
+        "20 melhorias de fotos por mês",
+        "Renovação automática",
         "Qualidade HD",
         "Suporte prioritário",
         "Sem marca d'água",
@@ -30,12 +34,14 @@ export default function Planos() {
       popular: true,
     },
     {
-      name: "Empresarial",
-      price: "R$ 39,90",
-      credits: "60 fotos",
-      description: "",
+      name: "🍽️ Mensal Completo",
+      price: "R$ 49,90",
+      period: "/mês",
+      credits: "50 fotos mensais",
+      description: "Restaurantes com cardápio médio a grande, que atualizam imagens constantemente",
       features: [
-        "60 melhorias de fotos",
+        "50 melhorias de fotos por mês",
+        "Renovação automática",
         "Qualidade 4K",
         "Suporte 24/7",
         "Sem marca d'água",
@@ -66,9 +72,12 @@ export default function Planos() {
               )}
               
               <CardHeader className="text-center">
-                <CardTitle>{plan.name}</CardTitle>
+                <CardTitle className="text-lg">{plan.name}</CardTitle>
                 <div className="space-y-1">
-                  <div className="text-3xl font-bold">{plan.price}</div>
+                  <div className="text-3xl font-bold">
+                    {plan.price}
+                    <span className="text-sm font-normal text-muted-foreground">{plan.period}</span>
+                  </div>
                   <CardDescription>{plan.credits}</CardDescription>
                   {plan.description && (
                     <p className="text-sm text-muted-foreground mt-2 italic">{plan.description}</p>
@@ -92,6 +101,21 @@ export default function Planos() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Pacote Extra */}
+        <div className="max-w-2xl mx-auto mt-8">
+          <Card className="border-dashed border-2 bg-secondary/10">
+            <CardContent className="p-6 text-center">
+              <h3 className="text-lg font-semibold mb-2">📦 Pacote Extra</h3>
+              <p className="text-muted-foreground mb-4">
+                Dentro de qualquer assinatura mensal, compre <strong>+10 fotos por R$ 9,90</strong>
+              </p>
+              <Button variant="outline" size="sm">
+                Adicionar créditos extras
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </Layout>
