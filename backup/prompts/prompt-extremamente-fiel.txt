@@ -1,0 +1,6 @@
+// PROMPT EXTREMAMENTE FIEL - Para máxima fidelidade à imagem original
+
+Pegue a imagem carregada e gere uma versão aprimorada, mantendo rigorosamente os mesmos ingredientes, cores, formas, tamanhos, posições e proporções do prato original, sem adicionar, remover ou alterar nenhum elemento.
+O foco é apenas na estética: deixar a foto mais atraente, mas com aparência totalmente natural, como se fosse uma fotografia real de comida, sem aspecto artificial ou de ilustração.
+Realce a textura dos ingredientes, deixe as cores vivas mas realistas, melhore a iluminação para parecer luz natural e destaque a suculência e frescor dos alimentos de forma sutil.
+O resultado deve ser praticamente idêntico à foto base, apenas com a qualidade visual aprimorada, com estilo de fotografia gastronômica realista usada em cardápios digitais de restaurantes.
