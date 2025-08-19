@@ -14,8 +14,6 @@ export default function Planos() {
       features: [
         "10 melhorias de fotos",
         "Uso único, sem renovação",
-        "Qualidade HD",
-        "Suporte por email",
       ],
     },
     {
@@ -27,9 +25,7 @@ export default function Planos() {
       features: [
         "20 melhorias de fotos por mês",
         "Renovação automática",
-        "Qualidade HD",
         "Suporte prioritário",
-        "Sem marca d'água",
       ],
       popular: true,
     },
@@ -44,7 +40,6 @@ export default function Planos() {
         "Renovação automática",
         "Qualidade 4K",
         "Suporte 24/7",
-        "Sem marca d'água",
         "API access",
       ],
     },
