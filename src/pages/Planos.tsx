@@ -6,9 +6,10 @@ import { Layout } from "@/components/layout/Layout";
 export default function Planos() {
   const plans = [
     {
-      name: "Básico",
+      name: "Rápido e Fácil",
       price: "R$ 9,90",
       credits: "10 fotos",
+      description: "Quem precisa de poucas fotos rápidas e sem compromisso mensal",
       features: [
         "10 melhorias de fotos",
         "Qualidade HD",
@@ -19,6 +20,7 @@ export default function Planos() {
       name: "Profissional",
       price: "R$ 19,90",
       credits: "25 fotos",
+      description: "",
       features: [
         "25 melhorias de fotos",
         "Qualidade HD",
@@ -31,6 +33,7 @@ export default function Planos() {
       name: "Empresarial",
       price: "R$ 39,90",
       credits: "60 fotos",
+      description: "",
       features: [
         "60 melhorias de fotos",
         "Qualidade 4K",
@@ -67,6 +70,9 @@ export default function Planos() {
                 <div className="space-y-1">
                   <div className="text-3xl font-bold">{plan.price}</div>
                   <CardDescription>{plan.credits}</CardDescription>
+                  {plan.description && (
+                    <p className="text-sm text-muted-foreground mt-2 italic">{plan.description}</p>
+                  )}
                 </div>
               </CardHeader>
               
