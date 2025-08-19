@@ -11,6 +11,7 @@ export default function VerificarEmail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const email = searchParams.get('email');
 
   useEffect(() => {
@@ -20,7 +21,7 @@ export default function VerificarEmail() {
         
         try {
           const uid = session.user.id;
-          const pendingName = localStorage.getItem('pending_name') || '';
+          const pendingName = sessionStorage.getItem('pendingName') || '';
 
           // Verificar se já existe um profile
           const { data: existingProfile } = await supabase
@@ -56,7 +57,7 @@ export default function VerificarEmail() {
           }
 
           // Limpar dados temporários
-          localStorage.removeItem('pending_name');
+          sessionStorage.removeItem('pendingName');
           
           toast.success('Login confirmado com sucesso!');
           
@@ -74,6 +75,32 @@ export default function VerificarEmail() {
 
     return () => subscription.subscription.unsubscribe();
   }, [navigate]);
+
+  const handleResendEmail = async () => {
+    if (!email) {
+      toast.error('Email não informado. Tente fazer login novamente.');
+      return;
+    }
+
+    setIsResending(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/verificar-email`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success('Link reenviado com sucesso! Verifique seu email.');
+    } catch (error: any) {
+      console.error('Erro ao reenviar email:', error);
+      toast.error('Não foi possível reenviar o email. Tente novamente.');
+    } finally {
+      setIsResending(false);
+    }
+  };
   if (isConfirmed) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -99,25 +126,34 @@ export default function VerificarEmail() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Mail className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle>Verifique seu email</CardTitle>
+          <CardTitle>Confirme seu e-mail</CardTitle>
           <CardDescription>
             {email ? (
-              <>Enviamos um link de verificação para <strong>{email}</strong>. 
-              Clique no link para ativar sua conta.</>
+              <>Enviamos um link para <strong>{email}</strong>. 
+              Verifique sua caixa de entrada e spam.</>
             ) : (
-              'Enviamos um link de verificação para seu email. Clique no link para ativar sua conta.'
+              'Enviamos um link de verificação para seu email. Verifique sua caixa de entrada e spam.'
             )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Não recebeu o email? Verifique sua caixa de spam ou tente novamente.
+            Depois de confirmar, você será redirecionado automaticamente e poderá usar sua 1ª foto grátis.
           </p>
-          <Link to="/login">
-            <Button variant="outline" className="w-full">
-              Voltar ao login
+          <div className="space-y-2">
+            <Button 
+              onClick={handleResendEmail} 
+              disabled={isResending || !email}
+              className="w-full"
+            >
+              {isResending ? "Reenviando..." : "Reenviar link"}
             </Button>
-          </Link>
+            <Link to="/login">
+              <Button variant="outline" className="w-full">
+                Voltar ao login
+              </Button>
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

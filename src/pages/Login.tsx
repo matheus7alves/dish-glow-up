@@ -59,27 +59,32 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      // Validação básica do email já feita pelo zod
-      // Validação adicional de domínio
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(data.email)) {
-        throw new Error('Formato de email inválido');
-      }
+      // Enviar link de verificação por email
+      const { error } = await supabase.auth.signInWithOtp({
+        email: data.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/verificar-email`,
+        },
+      });
 
-      // Para primeira foto grátis, salvar dados temporários e permitir acesso direto
-      localStorage.setItem('first_photo_name', data.name);
-      localStorage.setItem('first_photo_email', data.email);
-      localStorage.setItem('first_photo_granted', 'true');
+      if (error) throw error;
+
+      // Guardar nome no sessionStorage para recuperar após confirmação
+      sessionStorage.setItem('pendingName', data.name);
       
-      toast.success('Email validado! Agora você pode processar sua primeira foto grátis.');
-      navigate('/processar');
+      navigate(`/verificar-email?email=${encodeURIComponent(data.email)}`);
+      toast.success('Enviamos um link para o seu e-mail. Clique para confirmar.');
       
     } catch (error: any) {
-      console.error('Erro na validação:', error);
+      console.error('Erro no cadastro:', error);
       
-      let errorMessage = 'Email inválido. Verifique o formato do email.';
+      let errorMessage = 'Não foi possível enviar o e-mail de cadastro.';
       
-      if (error.message) {
+      if (error.message?.includes('rate_limit')) {
+        errorMessage = 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+      } else if (error.message?.includes('invalid_email')) {
+        errorMessage = 'Email inválido. Verifique o formato do email.';
+      } else if (error.message) {
         errorMessage = error.message;
       }
       
@@ -137,9 +142,9 @@ export default function Login() {
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Ganhe 1 foto grátis!</CardTitle>
+            <CardTitle className="text-2xl">Entre para ganhar 1 foto grátis</CardTitle>
             <CardDescription>
-              Apenas nome e email para ganhar sua primeira foto melhorada
+              Cadastre-se com nome e e-mail. Enviaremos um link de verificação.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -187,7 +192,7 @@ export default function Login() {
                   className="w-full" 
                   disabled={isLoading || !signupForm.formState.isValid}
                 >
-                  {isLoading ? "Validando..." : "Acessar primeira foto grátis"}
+                  {isLoading ? "Enviando..." : "Continuar"}
                 </Button>
               </form>
             </Form>
@@ -198,7 +203,7 @@ export default function Login() {
                   to="/login"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
-                  Já tem conta? Entrar
+                  Já tem conta? Verificar e-mail novamente
                 </Link>
               </div>
             </div>
@@ -274,7 +279,7 @@ export default function Login() {
                 to="/login?mode=signup"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
-                Primeira vez aqui? Ganhar foto grátis
+                Não tem conta? Ganhar foto grátis
               </Link>
             </div>
           </div>
