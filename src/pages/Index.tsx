@@ -43,7 +43,7 @@ const Index = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/processar">
                   <Button size="lg" className="w-full sm:w-auto">
-                    Começar agora
+                    🎉 Primeira foto grátis
                   </Button>
                 </Link>
                 <Link to="/planos">
@@ -108,7 +108,7 @@ const Index = () => {
             </p>
             <Link to="/processar">
               <Button size="lg">
-                Experimentar grátis
+                🎉 Teste grátis agora
               </Button>
             </Link>
           </div>
