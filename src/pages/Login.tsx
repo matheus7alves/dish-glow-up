@@ -73,11 +73,18 @@ export default function Login() {
       if (error) throw error;
 
       if (authData.user) {
-        // Guardar nome no sessionStorage para usar após confirmação
-        sessionStorage.setItem('pendingName', data.name);
-        
-        navigate(`/verificar-email?email=${encodeURIComponent(data.email)}`);
-        toast.success('Enviamos um link para o seu e-mail. Clique para confirmar.');
+        // Verificar se o usuário precisa confirmar o email
+        if (!authData.user.email_confirmed_at) {
+          // Guardar nome no sessionStorage para usar após confirmação
+          sessionStorage.setItem('pendingName', data.name);
+          
+          navigate(`/verificar-email?email=${encodeURIComponent(data.email)}`);
+          toast.success('Enviamos um link para o seu e-mail. Clique para confirmar.');
+        } else {
+          // Email já confirmado, usuário pode fazer login diretamente
+          toast.info('Este email já está cadastrado. Use a opção de login.');
+          setTimeout(() => navigate('/login'), 2000);
+        }
       }
       
     } catch (error: any) {
@@ -85,17 +92,19 @@ export default function Login() {
       
       let errorMessage = 'Não foi possível fazer o cadastro.';
       
-      if (error.message?.includes('rate_limit')) {
+      if (error.message?.includes('User already registered')) {
+        toast.info('Este email já está cadastrado. Use a opção de login ou clique em "Já tem conta?" abaixo.');
+      } else if (error.message?.includes('rate_limit')) {
         errorMessage = 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
       } else if (error.message?.includes('invalid_email')) {
         errorMessage = 'Email inválido. Verifique o formato do email.';
-      } else if (error.message?.includes('User already registered')) {
-        errorMessage = 'Este email já está cadastrado. Use a opção de login.';
       } else if (error.message) {
         errorMessage = error.message;
       }
       
-      toast.error(errorMessage);
+      if (errorMessage !== 'Este email já está cadastrado. Use a opção de login ou clique em "Já tem conta?" abaixo.') {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
