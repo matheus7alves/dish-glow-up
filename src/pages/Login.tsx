@@ -15,6 +15,7 @@ import { toast } from "sonner";
 const signupSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email deve ter um formato válido"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
 });
 
 const loginSchema = z.object({
@@ -38,6 +39,7 @@ export default function Login() {
     defaultValues: {
       name: "",
       email: "",
+      password: "",
     },
   });
 
@@ -59,9 +61,10 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      // Enviar link de verificação por email
-      const { error } = await supabase.auth.signInWithOtp({
+      // Cadastrar usuário com email e senha
+      const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
+        password: data.password,
         options: {
           emailRedirectTo: `${window.location.origin}/verificar-email`,
         },
@@ -69,21 +72,25 @@ export default function Login() {
 
       if (error) throw error;
 
-      // Guardar nome no sessionStorage para recuperar após confirmação
-      sessionStorage.setItem('pendingName', data.name);
-      
-      navigate(`/verificar-email?email=${encodeURIComponent(data.email)}`);
-      toast.success('Enviamos um link para o seu e-mail. Clique para confirmar.');
+      if (authData.user) {
+        // Guardar nome no sessionStorage para usar após confirmação
+        sessionStorage.setItem('pendingName', data.name);
+        
+        navigate(`/verificar-email?email=${encodeURIComponent(data.email)}`);
+        toast.success('Enviamos um link para o seu e-mail. Clique para confirmar.');
+      }
       
     } catch (error: any) {
       console.error('Erro no cadastro:', error);
       
-      let errorMessage = 'Não foi possível enviar o e-mail de cadastro.';
+      let errorMessage = 'Não foi possível fazer o cadastro.';
       
       if (error.message?.includes('rate_limit')) {
         errorMessage = 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
       } else if (error.message?.includes('invalid_email')) {
         errorMessage = 'Email inválido. Verifique o formato do email.';
+      } else if (error.message?.includes('User already registered')) {
+        errorMessage = 'Este email já está cadastrado. Use a opção de login.';
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -184,15 +191,34 @@ export default function Login() {
                       </FormControl>
                       <FormMessage />
                     </FormItem>
-                  )}
-                />
-                
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isLoading || !signupForm.formState.isValid}
-                >
-                  {isLoading ? "Enviando..." : "Continuar"}
+                )}
+              />
+              
+              <FormField
+                control={signupForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Mínimo 6 caracteres"
+                        {...field}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isLoading || !signupForm.formState.isValid}
+              >
+                {isLoading ? "Criando conta..." : "Criar conta"}
                 </Button>
               </form>
             </Form>
