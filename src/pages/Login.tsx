@@ -19,6 +19,7 @@ const signupSchema = z.object({
 
 const loginSchema = z.object({
   email: z.string().email("Email deve ter um formato válido"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
 });
 
 type SignupFormData = z.infer<typeof signupSchema>;
@@ -44,6 +45,7 @@ export default function Login() {
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
+      password: "",
     },
   });
 
@@ -57,6 +59,7 @@ export default function Login() {
     setIsLoading(true);
     
     try {
+      // Para primeira foto grátis, só precisamos validar email e enviar link mágico
       const { error } = await supabase.auth.signInWithOtp({
         email: data.email,
         options: {
@@ -70,7 +73,7 @@ export default function Login() {
       localStorage.setItem('pending_name', data.name);
       
       navigate(`/verificar-email?email=${encodeURIComponent(data.email)}`);
-      toast.success('Enviamos um link de confirmação para seu e-mail.');
+      toast.success('Enviamos um link de confirmação para seu e-mail para liberar sua primeira foto grátis.');
       
     } catch (error: any) {
       console.error('Erro no cadastro:', error);
@@ -95,22 +98,30 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      // Tentar fazer login tradicional com email e senha
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: data.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/verificar-email`,
-        },
+        password: data.password,
       });
 
-      if (error) throw error;
-      
-      navigate(`/verificar-email?email=${encodeURIComponent(data.email)}`);
-      toast.success('Enviamos um link de acesso para seu e-mail.');
+      if (error) {
+        // Se a senha estiver errada ou usuário não existir, verificar se é novo usuário
+        if (error.message?.includes('Invalid login credentials')) {
+          toast.error('Email ou senha incorretos. Se é seu primeiro acesso, use o botão "Cadastrar".');
+          return;
+        }
+        throw error;
+      }
+
+      if (authData.user) {
+        toast.success('Login realizado com sucesso!');
+        navigate('/processar');
+      }
       
     } catch (error: any) {
       console.error('Erro no login:', error);
       
-      let errorMessage = 'Não foi possível enviar o e-mail de login.';
+      let errorMessage = 'Não foi possível fazer o login.';
       
       if (error.message?.includes('rate_limit')) {
         errorMessage = 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
@@ -131,9 +142,9 @@ export default function Login() {
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Cadastre-se para ganhar 1 foto grátis</CardTitle>
+            <CardTitle className="text-2xl">Ganhe 1 foto grátis!</CardTitle>
             <CardDescription>
-              Preencha seus dados para receber o link de acesso
+              Apenas nome e email para ganhar sua primeira foto melhorada
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -181,7 +192,7 @@ export default function Login() {
                   className="w-full" 
                   disabled={isLoading || !signupForm.formState.isValid}
                 >
-                  {isLoading ? "Enviando..." : "Receber link de acesso"}
+                  {isLoading ? "Validando..." : "Ganhar primeira foto grátis"}
                 </Button>
               </form>
             </Form>
@@ -216,7 +227,7 @@ export default function Login() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Entrar</CardTitle>
           <CardDescription>
-            Digite seu email para receber o link de acesso
+            Entre com seu email e senha
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -241,12 +252,31 @@ export default function Login() {
                 )}
               />
               
+              <FormField
+                control={loginForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Sua senha"
+                        {...field}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
               <Button 
                 type="submit" 
                 className="w-full" 
                 disabled={isLoading || !loginForm.formState.isValid}
               >
-                {isLoading ? "Enviando..." : "Receber link de acesso"}
+                {isLoading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
           </Form>
@@ -257,7 +287,7 @@ export default function Login() {
                 to="/login?mode=signup"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
-                Não tem conta? Cadastrar
+                Primeira vez aqui? Ganhar foto grátis
               </Link>
             </div>
             <div>
