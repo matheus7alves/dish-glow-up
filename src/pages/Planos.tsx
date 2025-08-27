@@ -65,37 +65,12 @@ export default function Planos() {
   const { user } = useUser();
   const { isSubscribed } = useSubscription();
 
-  if (!user) {
-    return (
-      <Layout>
-        <div className="container mx-auto px-4 py-12">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-foreground mb-4">
-              Planos e Preços
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Escolha o plano ideal para suas necessidades de melhoria de imagens
-            </p>
-          </div>
-
-          <div className="max-w-2xl mx-auto">
-            <Alert className="border-primary/20 bg-primary/5">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Entre para ver os planos</AlertTitle>
-              <AlertDescription className="mt-2">
-                Entre para ver os planos e ganhar sua 1ª foto grátis.
-              </AlertDescription>
-              <div className="mt-4">
-                <Button asChild>
-                  <Link to="/login">Entrar</Link>
-                </Button>
-              </div>
-            </Alert>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+  const handlePlanAction = (handler: () => void) => {
+    if (!user) {
+      return () => window.location.href = '/login';
+    }
+    return handler;
+  };
 
   return (
     <Layout>
@@ -108,6 +83,23 @@ export default function Planos() {
             Escolha o plano ideal para suas necessidades de melhoria de imagens
           </p>
         </div>
+
+        {!user && (
+          <div className="max-w-2xl mx-auto mb-8">
+            <Alert className="border-primary/20 bg-primary/5">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Entre para ganhar sua 1ª foto grátis</AlertTitle>
+              <AlertDescription className="mt-2">
+                Faça login para liberar sua primeira melhoria gratuita e acessar todos os planos.
+              </AlertDescription>
+              <div className="mt-4">
+                <Button asChild>
+                  <Link to="/login">Entrar</Link>
+                </Button>
+              </div>
+            </Alert>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {plans.map((plan) => (
@@ -151,10 +143,10 @@ export default function Planos() {
                 <Button 
                   className="w-full" 
                   variant={plan.popular ? "default" : "outline"}
-                  onClick={plan.handler}
+                  onClick={handlePlanAction(plan.handler)}
                   aria-label={`${plan.cta} - ${plan.name} por R$ ${plan.price.toFixed(2).replace('.', ',')}`}
                 >
-                  {plan.cta}
+                  {user ? plan.cta : 'Entrar para comprar'}
                 </Button>
               </CardFooter>
             </Card>
