@@ -88,11 +88,14 @@ export default function Planos() {
           <div className="max-w-2xl mx-auto mb-8">
             <Alert className="border-primary/20 bg-primary/5">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Entre para ganhar sua 1ª foto grátis</AlertTitle>
+              <AlertTitle>Teste grátis disponível</AlertTitle>
               <AlertDescription className="mt-2">
-                Faça login para liberar sua primeira melhoria gratuita e acessar todos os planos.
+                Teste nossa ferramenta gratuitamente na página inicial. Para usar os planos, faça login.
               </AlertDescription>
-              <div className="mt-4">
+              <div className="mt-4 flex gap-2">
+                <Button asChild variant="outline">
+                  <Link to="/">Testar grátis</Link>
+                </Button>
                 <Button asChild>
                   <Link to="/login">Entrar</Link>
                 </Button>
